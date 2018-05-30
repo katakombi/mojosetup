@@ -29,8 +29,8 @@ static const MojoGuiEntryPoint staticGui[] =
 #if GUI_STATIC_LINK_COCOA
     MojoGuiPlugin_cocoa,
 #endif
-#if GUI_STATIC_LINK_GTKPLUS2
-    MojoGuiPlugin_gtkplus2,
+#if GUI_STATIC_LINK_GTKPLUS
+    MojoGuiPlugin_gtkplus,
 #endif
 #if GUI_STATIC_LINK_WWW
     MojoGuiPlugin_www,

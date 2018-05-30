@@ -14,17 +14,17 @@
 //  it has a million dependencies, so you might need to use a GTK+v1 plugin,
 //  too, in case they break backwards compatibility.
 
-#if !SUPPORT_GUI_GTKPLUS2
+#if !SUPPORT_GUI_GTKPLUS
 #error Something is wrong in the build system.
 #endif
 
 #define BUILDING_EXTERNAL_PLUGIN 1
 #include "gui.h"
 
-MOJOGUI_PLUGIN(gtkplus2)
+MOJOGUI_PLUGIN(gtkplus)
 
-#if !GUI_STATIC_LINK_GTKPLUS2
-CREATE_MOJOGUI_ENTRY_POINT(gtkplus2)
+#if !GUI_STATIC_LINK_GTKPLUS
+CREATE_MOJOGUI_ENTRY_POINT(gtkplus)
 #endif
 
 #undef format
@@ -105,7 +105,7 @@ static int wait_event(void)
     {
         char *title = xstrdup(_("Cancel installation"));
         char *text = xstrdup(_("Are you sure you want to cancel installation?"));
-        if (!MojoGui_gtkplus2_promptyn(title, text, false))
+        if (!MojoGui_gtkplus_promptyn(title, text, false))
             click_value = CLICK_NONE;
         free(title);
         free(text);
@@ -170,12 +170,12 @@ static void signal_browse_clicked(GtkButton *_button, gpointer data)
         _("Destination"),
         NULL,
         GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+        _("_Cancel"), GTK_RESPONSE_CANCEL,
+        _("_Open"), GTK_RESPONSE_ACCEPT,
         NULL);
 
     gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog),
-            gtk_combo_box_get_active_text(GTK_COMBO_BOX(destination)));
+            gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(destination)));
 
     if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
         gchar *filename;
@@ -184,7 +184,7 @@ static void signal_browse_clicked(GtkButton *_button, gpointer data)
         filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
         utfname = g_filename_to_utf8(filename, -1, NULL, NULL, NULL);
-        gtk_combo_box_prepend_text(GTK_COMBO_BOX(destination), utfname);
+        gtk_combo_box_text_prepend_text(GTK_COMBO_BOX_TEXT(destination), utfname);
         gtk_combo_box_set_active(GTK_COMBO_BOX(destination), 0);
 
         g_free(utfname);
@@ -200,12 +200,12 @@ static void signal_browse_clicked(GtkButton *_button, gpointer data)
 } // signal_browse_clicked
 
 
-static void signal_dest_changed(GtkComboBox *combo, gpointer user_data)
+static void signal_dest_changed(GtkComboBoxText *combo, gpointer user_data)
 {
     // Disable the forward button when the destination entry is blank.
     if ((currentpage == PAGE_DEST) && (canfwd))
     {
-        gchar *str = gtk_combo_box_get_active_text(combo);
+        gchar *str = gtk_combo_box_text_get_active_text(combo);
         const gboolean filled_in = ((str != NULL) && (*str != '\0'));
         g_free(str);
         gtk_widget_set_sensitive(next, filled_in);
@@ -227,35 +227,35 @@ static void signal_productkey_changed(GtkEditable *edit, gpointer user_data)
 } // signal_productkey_changed
 
 
-static uint8 MojoGui_gtkplus2_priority(boolean istty)
+static uint8 MojoGui_gtkplus_priority(boolean istty)
 {
     // gnome-session exports this environment variable since 2002.
     if (getenv("GNOME_DESKTOP_SESSION_ID") != NULL)
         return MOJOGUI_PRIORITY_TRY_FIRST;
 
     return MOJOGUI_PRIORITY_TRY_NORMAL;
-} // MojoGui_gtkplus2_priority
+} // MojoGui_gtkplus_priority
 
 
-static boolean MojoGui_gtkplus2_init(void)
+static boolean MojoGui_gtkplus_init(void)
 {
     int tmpargc = 0;
     char *args[] = { NULL, NULL };
     char **tmpargv = args;
     if (!gtk_init_check(&tmpargc, &tmpargv))
     {
-        logInfo("gtkplus2: gtk_init_check() failed, use another UI.");
+        logInfo("gtkplus: gtk_init_check() failed, use another UI.");
         return false;
     } // if
     return true;
-} // MojoGui_gtkplus2_init
+} // MojoGui_gtkplus_init
 
 
-static void MojoGui_gtkplus2_deinit(void)
+static void MojoGui_gtkplus_deinit(void)
 {
     // !!! FIXME: GTK+ doesn't have a deinit function...it installs a crappy
     // !!! FIXME:  atexit() function!
-} // MojoGui_gtkplus2_deinit
+} // MojoGui_gtkplus_deinit
 
 /**
  * 
@@ -291,13 +291,13 @@ static gint do_msgbox(const char *title, const char *text,
 } // do_msgbox
 
 
-static void MojoGui_gtkplus2_msgbox(const char *title, const char *text)
+static void MojoGui_gtkplus_msgbox(const char *title, const char *text)
 {
     do_msgbox(title, text, GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE, 0, NULL);
-} // MojoGui_gtkplus2_msgbox
+} // MojoGui_gtkplus_msgbox
 
 
-static boolean MojoGui_gtkplus2_promptyn(const char *title, const char *text,
+static boolean MojoGui_gtkplus_promptyn(const char *title, const char *text,
                                          boolean defval)
 {
     gint rc = do_msgbox(title, text, GTK_MESSAGE_QUESTION,
@@ -306,7 +306,7 @@ static boolean MojoGui_gtkplus2_promptyn(const char *title, const char *text,
                         NULL);
 
     return (rc == GTK_RESPONSE_YES);
-} // MojoGui_gtkplus2_promptyn
+} // MojoGui_gtkplus_promptyn
 
 
 static void promptynanButtonCallback(GtkWidget *_msgbox)
@@ -314,8 +314,8 @@ static void promptynanButtonCallback(GtkWidget *_msgbox)
     char *always = xstrdup(_("_Always"));
     char *never = xstrdup(_("N_ever"));
     gtk_dialog_add_buttons(GTK_DIALOG(_msgbox),
-                           GTK_STOCK_YES, GTK_RESPONSE_YES,
-                           GTK_STOCK_NO, GTK_RESPONSE_NO,
+                           _("_Yes"), GTK_RESPONSE_YES,
+                           _("_No"), GTK_RESPONSE_NO,
                            always, 1,
                            never, 0,
                            NULL);
@@ -325,7 +325,7 @@ static void promptynanButtonCallback(GtkWidget *_msgbox)
 } // promptynanButtonCallback
 
 
-static MojoGuiYNAN MojoGui_gtkplus2_promptynan(const char *title,
+static MojoGuiYNAN MojoGui_gtkplus_promptynan(const char *title,
                                                const char *text,
                                                boolean defval)
 {
@@ -343,7 +343,7 @@ static MojoGuiYNAN MojoGui_gtkplus2_promptynan(const char *title,
 
     assert(false && "BUG: unhandled case in switch statement");
     return MOJOGUI_NO;  // just in case.
-} // MojoGui_gtkplus2_promptynan
+} // MojoGui_gtkplus_promptynan
 
 
 static GtkWidget *create_button(GtkWidget *box, const char *iconname,
@@ -352,12 +352,12 @@ static GtkWidget *create_button(GtkWidget *box, const char *iconname,
                                     (GtkButton *button, gpointer data))
 {
     GtkWidget *button = gtk_button_new_with_mnemonic(text);
-    GtkWidget *image = gtk_image_new_from_stock(iconname, GTK_ICON_SIZE_BUTTON);
+    GtkWidget *image = gtk_image_new_from_icon_name(iconname, GTK_ICON_SIZE_BUTTON);
     gtk_button_set_image (GTK_BUTTON(button), image);
     gtk_widget_show(button);
     gtk_box_pack_start(GTK_BOX(box), button, FALSE, FALSE, 6);
-    gtk_signal_connect(GTK_OBJECT(button), "clicked",
-                      GTK_SIGNAL_FUNC(signal_callback), NULL);
+    g_signal_connect(GTK_WIDGET(button), "clicked",
+                      G_CALLBACK(signal_callback), NULL);
     return button;
 } // create_button
 
@@ -409,6 +409,7 @@ static GtkWidget *create_gtkwindow(const char *title,
     GtkWidget *box;
     GtkWidget *alignment;
     GtkWidget *hbox;
+    gint swidth, sheight;
 
     currentpage = PAGE_INTRO;
     canfwd = TRUE;
@@ -432,7 +433,11 @@ static GtkWidget *create_gtkwindow(const char *title,
         const MojoGuiSplashPos pos = _splash->position;
         if ((pos == MOJOGUI_SPLASH_LEFT) || (pos == MOJOGUI_SPLASH_RIGHT))
         {
+#if GTK_MAJOR_VERSION == 3
+            splashbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+#else
             splashbox = gtk_hbox_new(FALSE, 6);
+#endif
             gtk_widget_show(splashbox);
             gtk_container_add(GTK_CONTAINER(window), splashbox);
             if (pos == MOJOGUI_SPLASH_LEFT)
@@ -443,7 +448,11 @@ static GtkWidget *create_gtkwindow(const char *title,
 
         else if ((pos == MOJOGUI_SPLASH_TOP) || (pos == MOJOGUI_SPLASH_BOTTOM))
         {
+#if GTK_MAJOR_VERSION == 3
+            splashbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+#else
             splashbox = gtk_vbox_new(FALSE, 6);
+#endif
             gtk_widget_show(splashbox);
             gtk_container_add(GTK_CONTAINER(window), splashbox);
             if (pos == MOJOGUI_SPLASH_TOP)
@@ -456,7 +465,11 @@ static GtkWidget *create_gtkwindow(const char *title,
     if (splashbox == NULL)  // no splash, use the window for the top container.
         splashbox = window;
 
+#if GTK_MAJOR_VERSION == 3
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+#else
     box = gtk_vbox_new(FALSE, 6);
+#endif
     gtk_widget_show(box);
     gtk_container_add(GTK_CONTAINER(splashbox), box);
 
@@ -470,16 +483,32 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_box_pack_start(GTK_BOX(box), notebook, TRUE, TRUE, 0);
     gtk_notebook_set_show_tabs(GTK_NOTEBOOK(notebook), FALSE);
     gtk_notebook_set_show_border(GTK_NOTEBOOK(notebook), FALSE);
-    gtk_widget_set_size_request(notebook,
-                                (gint) (((float) gdk_screen_width()) * 0.4),
-                                (gint) (((float) gdk_screen_height()) * 0.4));
 
+#if GTK_CHECK_VERSION(3,22,0)
+    gdk_window_get_geometry (gdk_screen_get_root_window (gdk_screen_get_default()),
+                             NULL, NULL, &swidth, &sheight);
+#else
+    swidth = gdk_screen_width();
+    sheight = gdk_screen_height();
+#endif
+    gtk_widget_set_size_request(notebook,
+                                (gint) (((float) swidth) * 0.4),
+                                (gint) (((float) sheight) * 0.4));
+
+#if GTK_MAJOR_VERSION == 3
+    widget = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
+#else
     widget = gtk_hbutton_box_new();
+#endif
     gtk_widget_show(widget);
     gtk_box_pack_start(GTK_BOX(box), widget, FALSE, FALSE, 0);
     gtk_button_box_set_layout(GTK_BUTTON_BOX (widget), GTK_BUTTONBOX_END);
+#if GTK_MAJOR_VERSION == 3
+    // !!! FIXME: CSS
+#else
     gtk_button_box_set_child_ipadding(GTK_BUTTON_BOX (widget), 6, 0);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX (widget), 6);
+#endif
+    gtk_box_set_spacing(GTK_BOX (widget), 6);
 
     box = widget;
     cancel = create_button(box, "gtk-cancel", _("Cancel"), signal_clicked);
@@ -489,7 +518,11 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_widget_hide(finish);
 
     // !!! FIXME: intro page.
+#if GTK_MAJOR_VERSION == 3
+    widget = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     widget = gtk_vbox_new(FALSE, 0);
+#endif
     gtk_widget_show(widget);
     gtk_container_add(GTK_CONTAINER(notebook), widget);
 
@@ -514,24 +547,36 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_text_view_set_right_margin(GTK_TEXT_VIEW(readme), 4);
 
     // !!! FIXME: options page.
+#if GTK_MAJOR_VERSION == 3
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     box = gtk_vbox_new(FALSE, 0);
+#endif
     gtk_widget_show(box);
     gtk_container_add(GTK_CONTAINER(notebook), box);
 
     // Destination page
+#if GTK_MAJOR_VERSION == 3
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     box = gtk_vbox_new(FALSE, 0);
+#endif
     gtk_widget_show(box);
 
+#if GTK_MAJOR_VERSION == 3
+    hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+#else
     hbox = gtk_hbox_new (FALSE, 6);
+#endif
     widget = gtk_label_new(_("Folder:"));
     gtk_widget_show(widget);
     gtk_box_pack_start(GTK_BOX(hbox), widget, FALSE, TRUE, 0);
     gtk_label_set_justify(GTK_LABEL(widget), GTK_JUSTIFY_CENTER);
     gtk_label_set_line_wrap(GTK_LABEL(widget), FALSE);
     alignment = gtk_alignment_new(0.5, 0.5, 1, 0);
-    destination = gtk_combo_box_entry_new_text();
-    gtk_signal_connect(GTK_OBJECT(destination), "changed",
-                       GTK_SIGNAL_FUNC(signal_dest_changed), NULL);
+    destination = gtk_combo_box_text_new_with_entry();
+    g_signal_connect(GTK_WIDGET(destination), "changed",
+                       G_CALLBACK(signal_dest_changed), NULL);
     gtk_container_add(GTK_CONTAINER(alignment), destination);
     gtk_box_pack_start(GTK_BOX(hbox), alignment, TRUE, TRUE, 0);
     browse = create_button(hbox, "gtk-open",
@@ -541,7 +586,11 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_container_add(GTK_CONTAINER(notebook), box);    
 
     // Product key page
+#if GTK_MAJOR_VERSION == 3
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     box = gtk_vbox_new(FALSE, 0);
+#endif
     gtk_widget_show(box);
 
     widget = gtk_label_new(_("Please enter your product key"));
@@ -550,10 +599,14 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_widget_show(widget);
     gtk_box_pack_start(GTK_BOX(box), widget, FALSE, TRUE, 0);
 
+#if GTK_MAJOR_VERSION == 3
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+#else
     hbox = gtk_hbox_new(FALSE, 0);
+#endif
     gtk_widget_show(hbox);
     productkey = gtk_entry_new();
-    gtk_entry_set_editable(GTK_ENTRY(productkey), TRUE);
+    gtk_editable_set_editable(GTK_EDITABLE(productkey), TRUE);
     gtk_entry_set_visibility(GTK_ENTRY(productkey), TRUE);
     gtk_widget_show(productkey);
     gtk_box_pack_start(GTK_BOX(hbox), productkey, TRUE, FALSE, 0);
@@ -562,7 +615,11 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_container_add(GTK_CONTAINER(notebook), box);    
 
     // Progress page
+#if GTK_MAJOR_VERSION == 3
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+#else
     box = gtk_vbox_new(FALSE, 6);
+#endif
     gtk_widget_show(box);
     alignment = gtk_alignment_new(0.5, 0.5, 1, 0);
     gtk_widget_show(alignment);
@@ -578,7 +635,11 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_container_add(GTK_CONTAINER(notebook), box);
 
     // !!! FIXME: final page.
+#if GTK_MAJOR_VERSION == 3
+    widget = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     widget = gtk_vbox_new(FALSE, 0);
+#endif
     gtk_widget_show(widget);
     gtk_container_add(GTK_CONTAINER(notebook), widget);
     finallabel = gtk_label_new("");
@@ -587,8 +648,8 @@ static GtkWidget *create_gtkwindow(const char *title,
     gtk_label_set_justify(GTK_LABEL(finallabel), GTK_JUSTIFY_LEFT);
     gtk_label_set_line_wrap(GTK_LABEL(finallabel), TRUE);
 
-    gtk_signal_connect(GTK_OBJECT(window), "delete-event",
-                       GTK_SIGNAL_FUNC(signal_delete), NULL);
+    g_signal_connect(GTK_WIDGET(window), "delete-event",
+                       G_CALLBACK(signal_delete), NULL);
 
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_widget_show(window);
@@ -599,15 +660,15 @@ static GtkWidget *create_gtkwindow(const char *title,
 } // create_gtkwindow
 
 
-static boolean MojoGui_gtkplus2_start(const char *title,
+static boolean MojoGui_gtkplus_start(const char *title,
                                       const MojoGuiSplash *splash)
 {
     gtkwindow = create_gtkwindow(title, splash);
     return (gtkwindow != NULL);
-} // MojoGui_gtkplus2_start
+} // MojoGui_gtkplus_start
 
 
-static void MojoGui_gtkplus2_stop(void)
+static void MojoGui_gtkplus_stop(void)
 {
     assert(msgbox == NULL);
     if (gtkwindow != NULL)
@@ -627,17 +688,17 @@ static void MojoGui_gtkplus2_stop(void)
     next = NULL;
     finish = NULL;
     splash = NULL;
-} // MojoGui_gtkplus2_stop
+} // MojoGui_gtkplus_stop
 
 
-static int MojoGui_gtkplus2_readme(const char *name, const uint8 *data,
+static int MojoGui_gtkplus_readme(const char *name, const uint8 *data,
                                    size_t datalen, boolean can_back,
                                    boolean can_fwd)
 {
     GtkTextBuffer *textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(readme));
     gtk_text_buffer_set_text(textbuf, (const gchar *) data, datalen);
     return run_wizard(name, PAGE_README, can_back, can_fwd, true, can_fwd);
-} // MojoGui_gtkplus2_readme
+} // MojoGui_gtkplus_readme
 
 
 static void set_option_tree_sensitivity(MojoGuiSetupOptions *opts, boolean val)
@@ -663,7 +724,11 @@ static void signal_option_toggled(GtkToggleButton *toggle, gpointer data)
 static GtkWidget *new_option_level(GtkWidget *box)
 {
     GtkWidget *alignment = gtk_alignment_new(0.0, 0.5, 0, 0);
+#if GTK_MAJOR_VERSION == 3
+    GtkWidget *retval = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     GtkWidget *retval = gtk_vbox_new(FALSE, 0);
+#endif
     gtk_alignment_set_padding(GTK_ALIGNMENT(alignment), 0, 0, 15, 0);
     gtk_widget_show(alignment);
     gtk_widget_show(retval);
@@ -673,26 +738,11 @@ static GtkWidget *new_option_level(GtkWidget *box)
 } // new_option_level
 
 
-// use this to generate a tooltip only as needed.
-static GtkTooltips *get_tip(GtkTooltips **_tip)
-{
-    if (*_tip == NULL)
-    {
-        GtkTooltips *tip = gtk_tooltips_new();
-        gtk_tooltips_enable(tip);
-        *_tip = tip;
-    } // if
-
-    return *_tip;
-} // get_tip
-
-
 static void build_options(MojoGuiSetupOptions *opts, GtkWidget *box,
                           gboolean sensitive)
 {
     if (opts != NULL)
     {
-        GtkTooltips *tip = NULL;
         GtkWidget *widget = NULL;
 
         if (opts->is_group_parent)
@@ -711,7 +761,7 @@ static void build_options(MojoGuiSetupOptions *opts, GtkWidget *box,
             gtk_box_pack_start(GTK_BOX(box), alignment, FALSE, TRUE, 0);
 
             if (opts->tooltip != NULL)
-                gtk_tooltips_set_tip(get_tip(&tip), widget, opts->tooltip, 0);
+                gtk_widget_set_tooltip_text(widget, opts->tooltip);
 
             widget = NULL;
             childbox = new_option_level(box);
@@ -726,11 +776,11 @@ static void build_options(MojoGuiSetupOptions *opts, GtkWidget *box,
                 gtk_widget_set_sensitive(widget, sensitive);
                 gtk_widget_show(widget);
                 gtk_box_pack_start(GTK_BOX(childbox), widget, FALSE, TRUE, 0);
-                gtk_signal_connect(GTK_OBJECT(widget), "toggled",
-                                 GTK_SIGNAL_FUNC(signal_option_toggled), kids);
+                g_signal_connect(GTK_WIDGET(widget), "toggled",
+                                 G_CALLBACK(signal_option_toggled), kids);
 
                 if (kids->tooltip != NULL)
-                    gtk_tooltips_set_tip(get_tip(&tip),widget,kids->tooltip,0);
+                    gtk_widget_set_tooltip_text(widget,kids->tooltip);
 
                 if (kids->child != NULL)
                 {
@@ -750,11 +800,11 @@ static void build_options(MojoGuiSetupOptions *opts, GtkWidget *box,
             gtk_widget_set_sensitive(widget, sensitive);
             gtk_widget_show(widget);
             gtk_box_pack_start(GTK_BOX(box), widget, FALSE, TRUE, 0);
-            gtk_signal_connect(GTK_OBJECT(widget), "toggled",
-                               GTK_SIGNAL_FUNC(signal_option_toggled), opts);
+            g_signal_connect(GTK_WIDGET(widget), "toggled",
+                               G_CALLBACK(signal_option_toggled), opts);
 
             if (opts->tooltip != NULL)
-                gtk_tooltips_set_tip(get_tip(&tip), widget, opts->tooltip, 0);
+                gtk_widget_set_tooltip_text(widget, opts->tooltip);
 
             if (opts->child != NULL)
             {
@@ -768,7 +818,7 @@ static void build_options(MojoGuiSetupOptions *opts, GtkWidget *box,
 } // build_options
 
 
-static int MojoGui_gtkplus2_options(MojoGuiSetupOptions *opts,
+static int MojoGui_gtkplus_options(MojoGuiSetupOptions *opts,
                                     boolean can_back, boolean can_fwd)
 {
     int retval;
@@ -776,7 +826,11 @@ static int MojoGui_gtkplus2_options(MojoGuiSetupOptions *opts,
     GtkWidget *page;  // this is a vbox.
 
     page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), PAGE_OPTIONS);
+#if GTK_MAJOR_VERSION == 3
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     box = gtk_vbox_new(FALSE, 0);
+#endif
     gtk_widget_show(box);
     gtk_box_pack_start(GTK_BOX(page), box, FALSE, FALSE, 0);
 
@@ -785,27 +839,27 @@ static int MojoGui_gtkplus2_options(MojoGuiSetupOptions *opts,
                         can_back, can_fwd, true, can_fwd);
     gtk_widget_destroy(box);
     return retval;
-} // MojoGui_gtkplus2_options
+} // MojoGui_gtkplus_options
 
 
-static char *MojoGui_gtkplus2_destination(const char **recommends, int recnum,
+static char *MojoGui_gtkplus_destination(const char **recommends, int recnum,
                                           int *command, boolean can_back,
                                           boolean can_fwd)
 {
-    GtkComboBox *combo = GTK_COMBO_BOX(destination);
+    GtkComboBoxText *combo = GTK_COMBO_BOX_TEXT(destination);
     const boolean fwd_at_start = ( (recnum > 0) && (*(recommends[0])) );
     gchar *str = NULL;
     char *retval = NULL;
     int i;
 
     for (i = 0; i < recnum; i++)
-        gtk_combo_box_append_text(combo, recommends[i]);
-    gtk_combo_box_set_active (combo, 0);
+        gtk_combo_box_text_append_text(combo, recommends[i]);
+    gtk_combo_box_set_active (GTK_COMBO_BOX(combo), 0);
 
     *command = run_wizard(_("Destination"), PAGE_DEST,
                           can_back, can_fwd, true, fwd_at_start);
 
-    str = gtk_combo_box_get_active_text(combo);
+    str = gtk_combo_box_text_get_active_text(combo);
 
     // shouldn't ever be empty ("next" should be disabled in that case).
     assert( (*command <= 0) || ((str != NULL) && (*str != '\0')) );
@@ -814,13 +868,13 @@ static char *MojoGui_gtkplus2_destination(const char **recommends, int recnum,
     g_free(str);
 
     for (i = recnum-1; i >= 0; i--)
-        gtk_combo_box_remove_text(combo, i);
+        gtk_combo_box_text_remove(combo, i);
 
     return retval;
-} // MojoGui_gtkplus2_destination
+} // MojoGui_gtkplus_destination
 
 
-static int MojoGui_gtkplus2_productkey(const char *desc, const char *fmt,
+static int MojoGui_gtkplus_productkey(const char *desc, const char *fmt,
                                        char *buf, const int buflen,
                                        boolean can_back, boolean can_fwd)
 {
@@ -832,12 +886,12 @@ static int MojoGui_gtkplus2_productkey(const char *desc, const char *fmt,
     gtk_entry_set_width_chars(GTK_ENTRY(productkey), buflen - 1);
     gtk_entry_set_text(GTK_ENTRY(productkey), (gchar *) buf);
 
-    const guint connid = gtk_signal_connect(GTK_OBJECT(productkey), "changed",
-                                    GTK_SIGNAL_FUNC(signal_productkey_changed),
+    const guint connid = g_signal_connect(GTK_WIDGET(productkey), "changed",
+                                    G_CALLBACK(signal_productkey_changed),
                                     (void *) fmt);
     retval = run_wizard(desc, PAGE_PRODUCTKEY,
                         can_back, can_fwd, true, fwd_at_start);
-    gtk_signal_disconnect(GTK_OBJECT(productkey), connid);
+    g_signal_handler_disconnect(GTK_WIDGET(productkey), connid);
 
     str = gtk_editable_get_chars(GTK_EDITABLE(productkey), 0, -1);
     // should never be invalid ("next" should be disabled in that case).
@@ -848,10 +902,10 @@ static int MojoGui_gtkplus2_productkey(const char *desc, const char *fmt,
     gtk_entry_set_text(GTK_ENTRY(productkey), "");
 
     return retval;
-} // MojoGui_gtkplus2_productkey
+} // MojoGui_gtkplus_productkey
 
 
-static boolean MojoGui_gtkplus2_insertmedia(const char *medianame)
+static boolean MojoGui_gtkplus_insertmedia(const char *medianame)
 {
     gint rc = 0;
     // !!! FIXME: Use stock GTK icon for "media"?
@@ -866,16 +920,16 @@ static boolean MojoGui_gtkplus2_insertmedia(const char *medianame)
     free((void *) fmt);
     free((void *) title);
     return (rc == GTK_RESPONSE_OK);
-} // MojoGui_gtkplus2_insertmedia
+} // MojoGui_gtkplus_insertmedia
 
 
-static void MojoGui_gtkplus2_progressitem(void)
+static void MojoGui_gtkplus_progressitem(void)
 {
     // no-op in this UI target.
-} // MojoGui_gtkplus2_progressitem
+} // MojoGui_gtkplus_progressitem
 
 
-static boolean MojoGui_gtkplus2_progress(const char *type, const char *component,
+static boolean MojoGui_gtkplus_progress(const char *type, const char *component,
                                          int percent, const char *item,
                                          boolean can_cancel)
 {
@@ -900,16 +954,16 @@ static boolean MojoGui_gtkplus2_progress(const char *type, const char *component
     rc = pump_events();
     assert( (rc == ((int) CLICK_CANCEL)) || (rc == ((int) CLICK_NONE)) );
     return (rc != CLICK_CANCEL);
-} // MojoGui_gtkplus2_progress
+} // MojoGui_gtkplus_progress
 
 
-static void MojoGui_gtkplus2_final(const char *msg)
+static void MojoGui_gtkplus_final(const char *msg)
 {
     gtk_widget_hide(next);
     gtk_widget_show(finish);
     gtk_label_set_text(GTK_LABEL(finallabel), msg);
     run_wizard(_("Finish"), PAGE_FINAL, false, true, false, true);
-} // MojoGui_gtkplus2_final
+} // MojoGui_gtkplus_final
 
 // end of gui_gtkplus2.c ...
 
