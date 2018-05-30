@@ -15,7 +15,11 @@ MojoArchive *MojoArchive_createZIP(MojoInput *io) { return NULL; }
 #include <time.h>
 #include <errno.h>
 
+#if !USE_SYSTEM_ZLIB
 #include "miniz.h"
+#else
+#include <zlib.h>
+#endif
 
 /*
  * ZIP support routines, adapted from PhysicsFS (http://icculus.org/physfs/)

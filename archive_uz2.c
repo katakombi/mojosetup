@@ -20,7 +20,11 @@ MojoArchive *MojoArchive_createUZ2(MojoInput *io) { return NULL; }
 //    uint8 data[compressed size]  <-- unpacks to (uncompressed size) bytes.
 // Decompression is handled by zlib's "uncompress" function.
 
+#if !USE_SYSTEM_ZLIB
 #include "miniz.h"
+#else
+#include <zlib.h>
+#endif
 
 #define MAXCOMPSIZE 32768
 #define MAXUNCOMPSIZE 33096  // MAXCOMPSIZE + 1%

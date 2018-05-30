@@ -46,7 +46,11 @@ static const MojoArchiveType archives[] =
 
 #if SUPPORT_GZIP
 
+#if !USE_SYSTEM_ZLIB
 #include "miniz.h"
+#else
+#include <zlib.h>
+#endif
 
 #define GZIP_READBUFSIZE (128 * 1024)
 
